@@ -1,0 +1,120 @@
+---
+title: "SU Project"
+output: html_document
+date: "2023-10-24"
+---
+
+```{r}
+library(eeptools)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(forcats)
+library(grid)
+library(gridExtra)
+```
+
+```{r}
+state_pop <- read.csv("/Users/zoeschopick/state demographics education.csv")
+
+names(state_pop) <- c("State", "Population", "Pop_over_25", "Under_9th", "Some_HS", "HS", "Some_college", "Associates", "Bachelors", "Grad", "HS_or_higher", "Bach_or_higher" )
+
+state_pop2 <- state_pop %>% mutate(Population = decomma(Population)) %>% mutate(Pop_over_25 = decomma(Pop_over_25)) %>% mutate(Under_9th = decomma(Under_9th)) %>% mutate(Some_HS = decomma(Some_HS)) %>% mutate(HS = decomma(HS)) %>% mutate(Some_college = decomma(Some_college)) %>% mutate(Associates = decomma(Associates)) %>% mutate(Bachelors = decomma(Bachelors)) %>% mutate(Grad = decomma(Grad)) %>% mutate(HS_or_higher = decomma(HS_or_higher))%>% mutate(Bach_or_higher = decomma(Bach_or_higher))
+```
+
+```{r}
+state_pop3 <- state_pop2 %>% mutate(Under9_perc = round(Under_9th/Pop_over_25*100, 2)) %>% mutate(SomeHS_perc = round(Some_HS/Pop_over_25*100, 2)) %>% mutate(HS_perc = round(HS/Pop_over_25*100, 2)) %>% mutate(Somecol_perc = round(Some_college/Pop_over_25*100, 2)) %>% mutate(Assoc_perc = round(Associates/Pop_over_25*100, 2)) %>% mutate(Bach_perc = round(Bachelors/Pop_over_25*100, 2)) %>% mutate(Grad_perc = round(Grad/Pop_over_25*100, 2)) %>% mutate(HS_higher_perc = round(HS_or_higher/Pop_over_25*100, 2)) %>% mutate(Bach_higher_perc = round(Bach_or_higher/Pop_over_25*100, 2))
+```
+
+```{r}
+percentage_education <- state_pop3 %>% select(State, Under9_perc, SomeHS_perc, HS_perc, Somecol_perc, Assoc_perc, Bach_perc, Grad_perc, HS_higher_perc, Bach_higher_perc)
+
+names(percentage_education) <- c("State", "Under_9th", "Some_HS", "HS", "Some_College", "Associates", "Bachelors", "Graduate", "HS_or_higher", "Bachelors_or_higher")
+
+percentage_education <- percentage_education %>% mutate(State =  c("AL", "AK", "AZ", "AR", "CA", "CO", "CT","DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX","UT", "VT", "VA", "WA", "WV", "WI", "WY" ))
+
+percentage_education <- percentage_education %>% mutate(Less_than_HS = 100 - HS_or_higher)
+
+percentage_education <- percentage_education %>% mutate(After_HS = Some_College + Associates +Bachelors + Graduate)
+
+percentage_education <- percentage_education %>% mutate(HS_Grad = HS + Some_College + Associates + Bachelors + Graduate)
+
+percentage_education <- percentage_education %>% mutate(College_degree = Associates + Bachelors + Graduate)
+
+percentage_education <- percentage_education[-c(9),]
+```
+
+
+```{r}
+bachdegree2 <- ggplot(data = percentage_education, aes(x=reorder(State, -Bachelors_or_higher), y = Bachelors_or_higher)) + geom_col(fill = c( rep("azure4", 45), "forestgreen", rep("azure4", 4))) +  theme_bw() + theme(axis.text.x=element_text(angle = 90)) + xlab("State") + ylab("Percent with Bachelor's Degree") + ggtitle("VA in Top 25% of Bachelor's Degree Attainment") + theme(plot.title = element_text(hjust = 0.5, size=15), axis.title = element_text(size = 12))
+```
+
+```{r}
+beyond_hs <- ggplot(data = percentage_education, aes(x=reorder(State, -After_HS), y = After_HS)) + geom_col(fill = c( rep("azure4", 45), "forestgreen", rep("azure4", 4))) +theme_bw()+ theme(axis.text.x=element_text(angle = 90)) + xlab("State") + ylab("Percent With Beyond HS Education") + ggtitle("VA in Top 25% of Beyond High School Education") + theme(plot.title = element_text(hjust = 0.5, size=15), axis.title = element_text(size = 12))
+```
+
+```{r}
+grad_degree2 <- ggplot(data = percentage_education, aes(x=reorder(State, -Graduate), y = Graduate)) + geom_col(fill = c( rep("azure4", 45), "forestgreen", rep("azure4", 4))) + theme_bw()+ theme(axis.text.x=element_text(angle = 90)) + xlab("State") + ylab("Percent with Graduate Degree") + ggtitle("VA in Top 25% of Graduate Degree Attainment") + theme(plot.title = element_text(hjust = 0.5, size=15), axis.title = element_text(size = 12))
+```
+
+```{r}
+college_degree <- ggplot(percentage_education, aes(x=reorder(State, -College_degree), y = College_degree)) + geom_col(fill = c( rep("azure4", 45), "forestgreen", rep("azure4", 4))) + theme_bw() + theme(axis.text.x=element_text(angle = 90)) + xlab("State") + ylab("Percent with College Degree") + ggtitle("VA in Top 25% of College Degree Attainment") + theme(plot.title = element_text(hjust = 0.5, size=15), axis.title = element_text(size = 12))
+```
+
+```{r}
+average_us<- c(round(mean(percentage_education$Under_9th), 2), mean(percentage_education$Some_HS), mean(percentage_education$HS), mean(percentage_education$Some_College), mean(percentage_education$Associates), mean(percentage_education$Bachelors), mean(percentage_education$Graduate), mean(percentage_education$HS_or_higher), mean(percentage_education$Bachelors_or_higher))
+
+virginia <- c(4, 6, 24, 19, 8, 22, 17, 90, 40)
+
+labels <- c("Under_9th", "Some_HS", "HS", "Some_College", "Associates", "Bachelors", "Graduate", "HS_or_higher", "Bachelors_or_higher")
+
+va_vs_avg <- data.frame(labels, virginia, round(average_us,2))
+
+```
+
+```{r}
+labels2 <- c("Under_9th", "Some_HS", "HS", "Some_College", "Associates", "Bachelors", "Graduate" , "Under_9th", "Some_HS", "HS", "Some_College", "Associates", "Bachelors", "Graduate")
+
+state2 <- c("Virginia", "Virginia", "Virginia", "Virginia", "Virginia", "Virginia", "Virginia", "US Average", "US Average", "US Average", "US Average", "US Average", "US Average", "US Average" )
+
+count2 <- c(4, 6, 24, 19, 8, 22, 17, round(mean(percentage_education$Under_9th), 2), round(mean(percentage_education$Some_HS), 2), round(mean(percentage_education$HS), 2), round(mean(percentage_education$Some_College), 2), round(mean(percentage_education$Associates), 2), round(mean(percentage_education$Bachelors), 2), round(mean(percentage_education$Graduate), 2))
+
+va_vs_avg2 <- data.frame(labels2, state2, count2)
+
+va_vs_avg2$state2 <- factor(va_vs_avg2$state2)
+
+va_vs_avg2$labels2 <- factor(va_vs_avg2$labels2, levels = c("Under_9th", "Some_HS", "HS", "Some_College", "Associates", "Bachelors", "Graduate"))
+
+```
+
+
+```{r}
+total_count <- c(90, 40, round(mean(percentage_education$HS_or_higher), 2), round(mean(percentage_education$Bachelors_or_higher), 2))
+
+labels3 <- c("HS_or_Higher", "Bachelors_or_Higher", "HS_or_Higher", "Bachelors_or_Higher")
+
+state3 <- c("Virginia", "Virginia", "US Average", "US Average")
+
+total_va_vs_avg <- data.frame(labels3, state3, total_count)
+
+total_va_vs_avg$state3 <- factor(total_va_vs_avg$state3)
+
+total_va_vs_avg$labels3 <- factor(total_va_vs_avg$labels3, levels = c("HS_or_Higher", "Bachelors_or_Higher"))
+```
+
+
+```{r}
+us_vs_va2 <- ggplot(va_vs_avg2, aes(x=labels2, y = count2)) + geom_col(aes(fill = state2), position = "dodge") +  theme_bw() + xlab("Level of Education") + ylab("Percentage") + scale_x_discrete(labels = c("Less\nthan\n9th", "Some\nHigh\nSchool", "High\nSchool", "Some\nCollege", "Associates", "Bachelors", "Graduate")) + ggtitle("Education Levels: US Average vs Virginia") + theme(plot.title = element_text(hjust = 0.5, size=15), axis.title = element_text(size = 12)) + theme(legend.title = element_blank()) + scale_fill_manual(values = c("azure4", "darkorange3"))
+```
+
+
+```{r}
+total_us_vs_va <- ggplot(total_va_vs_avg, aes(x=labels3, y = total_count)) + geom_col(aes(fill = state3), position = "dodge") + theme_bw() + ylab("Percentage") + xlab("Level of Education") + scale_x_discrete(labels = c("High School\nor Higher", "Bachelors\nor Higher")) + ggtitle("Education Levels: US Average vs Virginia") + theme(plot.title = element_text(hjust = 0.5, size=15), axis.title = element_text(size = 12)) + theme(legend.title = element_blank()) + scale_fill_manual(values = c("azure4", "darkorange3"))
+```
+
+
+
+
+
+
+
